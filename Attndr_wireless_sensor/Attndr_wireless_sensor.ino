@@ -40,23 +40,47 @@ String sendGET(const char url[], int port, const char path[], int length){
 		client.print("Host: ");
 		client.print(url);
 		client.print("\r\nUser-Agent: Mozilla/5.0\r\n");
-		client.print("Connection: close\r\n\r\n");
-	//	Serial.println("WOW connected");
+		client.print("User-Agent: Mozilla/5.0\r\n");
+		client.print("Accept: text/html\r\n\r\n");
+		Serial.println("WOW connected");
+	
+		Serial.print("GET ");
+		Serial.print(path);
+		Serial.print(" HTTP/1.1\r\n");
+		Serial.print("Host: ");
+		Serial.print(url);
+		Serial.print("\r\nUser-Agent: Mozilla/5.0\r\n");
+		Serial.print("User-Agent: Mozilla/5.0\r\n");
+		Serial.print("Accept: text/html\r\n\r\n");
+		Serial.println("WOW connected");
+		//GET / hello.htm HTTP / 1.1
+		//	User - Agent: Mozilla / 4.0 (compatible; MSIE5.01; Windows NT)
+		//Host : www.tutorialspoint.com
+		//	   Accept - Language : en - us
+		//	   Accept - Encoding : gzip, deflate
+		//   Connection : Keep - Alive
 	}
+	while (client.connected() && client.available()){
 
+		temp += (char)client.read();
+		Serial.print(".");
+	}
 	int wait = 1000;
 	while (client.connected() && !client.available() && wait--){
 		delay(3);
+		
 	}
-	while (client.available()){
+	while (client.connected() && client.available()){
+		
 		temp += (char)client.read();
+		Serial.print(".");
 	}
-	Serial.println("\n");
+	
 	if (temp.indexOf("@") != -1){
 		recv = temp.substring(temp.indexOf("@")+1, temp.lastIndexOf("@"));
 	}
 
-	client.stop();
+	Serial.println(temp);
 	return recv;
 }
 void sendResponse(const char* response, int length){
@@ -86,8 +110,8 @@ void setup() {
 	
 	ssid.reserve(SSIDlen);
 	password.reserve(PASSWORDlen);
-	ssid = "Rashtrapati Bhavan-2";
-	password = "foin2016";
+	ssid = "NETGEAR";
+	password = "passphrase";
 	USE_SERIAL.begin(115200);
 	
 	byte i = 0;
@@ -107,20 +131,17 @@ void setup() {
 	if (WiFi.waitForConnectResult() == WL_CONNECTED){
 		Serial.println(WiFi.localIP());
 	}
-
 }
 
 long timers = 0;
 void loop() {
 	server.handleClient();
-	if (millis() - timers > 5000){
-		timers = millis();
-	}
+	if (Serial.available() > 3){ Serial.flush(); }
 	if (WiFi.status() != WL_CONNECTED){
 		WiFi.begin(ssid.c_str(), password.c_str()); //loaded from the eeprom 
 		delay(1000);
 		}
-	else if (WiFi.status() == WL_CONNECTED && USE_SERIAL.available()>0)  {
+	else if (WiFi.status() == WL_CONNECTED && USE_SERIAL.available()>0&& USE_SERIAL.available()<3)  {
 		delay(500);
 			String path = "/sensor.php?number=";
 			String input;
@@ -129,10 +150,16 @@ void loop() {
 				input += Serial.read()-48;
 			}
 			path += input;
-			String recv = sendGET(URL, PORT, path.c_str(), path.length());
-			Serial.println(recv);
+			String recv;
+			Serial.println(path);
+				recv = sendGET(URL, PORT, path.c_str(), path.length());
+				Serial.println(recv);
+				if (recv.length() < 4){ Serial.println("failed"); };
+			
+			
 		}
-	Serial.println(timers % 5);//send random data just to ensure that the module is healthy
+	
+	//Serial.println(timers % 5);//send random data just to ensure that the module is healthy
 	delay(1000);
 }
 
